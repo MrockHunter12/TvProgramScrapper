@@ -64,7 +64,7 @@ class TVProgram:
                 next_program_time = datetime.datetime.strptime(components_next[0], '%H:%M').time()
                 current_program = program_info[i]
                 next_program = program_info[i+1]
-                if selectedTime < program_time and selectedTime < next_program_time:
+                if selectedTime < program_time and selectedTime < next_program_time and selectedTime>= datetime.time(5, 00):
                     raise ValueError('selected time is not inside current day')
                 if program_time > next_program_time:
                     if selectedTime > program_time:
