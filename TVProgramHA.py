@@ -12,8 +12,8 @@ def get_program(channel_name):
     try:
         resoponse = program.get_program(programInfoList, time)
     except ValueError as e:
-        programInfoListToday = program.getProgramInfoList(0,"ZDF", channel_name_to_id)
-        programInfoListLastDay = program.getProgramInfoList(-1,"ZDF", channel_name_to_id)
+        programInfoListToday = program.getProgramInfoList(0,channel_name, channel_name_to_id)
+        programInfoListLastDay = program.getProgramInfoList(-1,channel_name, channel_name_to_id)
         resoponse = program.get_program_betweenDays(programInfoListLastDay, programInfoListToday)
     return resoponse
 

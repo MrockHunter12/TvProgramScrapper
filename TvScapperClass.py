@@ -6,16 +6,19 @@ import re
 class TVProgram:
     def __init__(self):
         self.url = "https://www.hoerzu.de/text/tv-programm/sender.php"
+        self.selected_channel_name = ""
+        self.channel_name_to_id = {}
+        self.channel_id = None
     def setDay(self, day):
         self.selected_day = day
     def setChannel(self, channelName):
         self.selected_channel_name = channelName
     def setUrl(self, url):
         self.url = url
-    def get_channel_dic(self, url):
+    def get_channel_dic(self):
         response=""
         channel_name_to_id = {}
-        response = requests.get(url)
+        response = requests.get(self.url)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             select_element = soup.find('select', {'name': 'tvchannelid'})
@@ -31,15 +34,24 @@ class TVProgram:
                 print("Failed to fetch channel data.")
         else:
             print(f"Failed to fetch the page. Status code: {response.status_code}")
-        return channel_name_to_id
+        self.channel_name_to_id = channel_name_to_id
+        return self.channel_name_to_id
     
-    def getProgramInfoList(self, day, channelName, channel_name_to_id):
+    def getIdFromChannelName(self):
+        self.get_channel_dic()
+        channel_id = None
+        if self.selected_channel_name.lower() in self.channel_name_to_id:
+            channel_id = self.channel_name_to_id[self.selected_channel_name.lower()]
+        self.channel_id = channel_id
+        return self.channel_id
+    
+    def getProgramInfoList(self, day):
         program_info = []
-        if channelName.lower() in channel_name_to_id:
-            channel_id = channel_name_to_id[channelName.lower()]
+        self.getIdFromChannelName()
+        if self.channel_id != None:
             params = {
                 "newday": day,
-                "tvchannelid": channel_id,
+                "tvchannelid":  self.channel_id,
                 "timeday": 1
             }
             response = requests.post(self.url, data=params)
@@ -53,25 +65,36 @@ class TVProgram:
                 raise ValueError('could not fetch site')
         return program_info
 
-    def get_program(self, program_info=None, selectedTime=None):
-        for i, line in enumerate(program_info):
-            if i == len(program_info) - 1:
+    def get_program(self, selectedTime=None):
+        response="empty"
+        programInfoListToday = self.getProgramInfoList(0)
+        programInfoListLastDay = self.getProgramInfoList(-1)
+        programInfoListNextDay = self.getProgramInfoList(1)
+        for i, line in enumerate(programInfoListToday):
+            if i == len(programInfoListToday) - 1:
                 break
-            components_current = program_info[i].split(' ', 2)
-            components_next = program_info[i+1].split(' ', 2)
+            components_NextDay_first = programInfoListNextDay[1].split(' ', 2)
+            components_LastDay_last = programInfoListLastDay[len(programInfoListToday) - 2].split(' ', 2)
+            components_current = programInfoListToday[i].split(' ', 2)
+            components_next = programInfoListToday[i+1].split(' ', 2)
             if (len(components_current[0]) == 5 and ':' in components_current[0]) and (len(components_next[0]) == 5 and ':' in components_next[0]):
                 program_time = datetime.datetime.strptime(components_current[0], '%H:%M').time()
                 next_program_time = datetime.datetime.strptime(components_next[0], '%H:%M').time()
-                current_program = program_info[i]
-                next_program = program_info[i+1]
-                if selectedTime < program_time and selectedTime < next_program_time and selectedTime>= datetime.time(5, 00):
-                    raise ValueError('selected time is not inside current day')
-                if program_time > next_program_time:
-                    if selectedTime > program_time:
+                last_program_last_day = datetime.datetime.strptime(components_LastDay_last[0], '%H:%M').time()
+                first_program_next_day = datetime.datetime.strptime(components_NextDay_first[0], '%H:%M').time()
+                current_program = programInfoListToday[i]
+                next_program = programInfoListToday[i+1]
+                if selectedTime < program_time and selectedTime < next_program_time and selectedTime <= datetime.time(5, 00) and selectedTime > last_program_last_day and i<=3:
+                    #program_time_last_day_last_element = datetime.datetime.strptime(programInfoListLastDay[len(programInfoListLastDay)-3], '%H:%M').time()
+                    if selectedTime < program_time and selectedTime>= last_program_last_day:
+                        response = self.get_program_betweenDays(programInfoListLastDay, programInfoListToday)
                         break
-                elif program_time <= selectedTime and next_program_time > selectedTime :
-                    break
-        response = f'Jetzt: {current_program}' + "\n" + f'Danach: {next_program}'
+                if selectedTime < first_program_next_day and selectedTime > program_time and selectedTime>= next_program_time and i >= len(programInfoListToday) - 4:
+                     response = f'Jetzt: {next_program}' + "\n" + f'Danach: {programInfoListNextDay[1]}'
+                     break
+                else:
+                    response = f'Jetzt: {current_program}' + "\n" + f'Danach: {next_program}'
+
         return(response)
     
     def get_program_betweenDays(self, program_info_lastday = None,program_info = None ):
