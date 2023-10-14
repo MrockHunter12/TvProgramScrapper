@@ -70,11 +70,12 @@ class TVProgram:
         programInfoListToday = self.getProgramInfoList(0)
         programInfoListLastDay = self.getProgramInfoList(-1)
         programInfoListNextDay = self.getProgramInfoList(1)
+        debug = (len(programInfoListToday) - 3)
         for i, line in enumerate(programInfoListToday):
             if i == len(programInfoListToday) - 1:
                 break
             components_NextDay_first = programInfoListNextDay[1].split(' ', 2)
-            components_LastDay_last = programInfoListLastDay[len(programInfoListToday) - 2].split(' ', 2)
+            components_LastDay_last = programInfoListLastDay[len(programInfoListLastDay) - 3].split(' ', 2)
             components_current = programInfoListToday[i].split(' ', 2)
             components_next = programInfoListToday[i+1].split(' ', 2)
             if (len(components_current[0]) == 5 and ':' in components_current[0]) and (len(components_next[0]) == 5 and ':' in components_next[0]):
@@ -89,10 +90,10 @@ class TVProgram:
                     if selectedTime < program_time and selectedTime>= last_program_last_day:
                         response = self.get_program_betweenDays(programInfoListLastDay, programInfoListToday)
                         break
-                if selectedTime < first_program_next_day and selectedTime > program_time and selectedTime>= next_program_time and i >= len(programInfoListToday) - 4:
+                elif (selectedTime < first_program_next_day) and (selectedTime > program_time) and (selectedTime>= next_program_time) and (i >debug):
                      response = f'Jetzt: {next_program}' + "\n" + f'Danach: {programInfoListNextDay[1]}'
                      break
-                else:
+                elif (selectedTime >= program_time and selectedTime < next_program_time) or (next_program_time<program_time and selectedTime<next_program_time):
                     response = f'Jetzt: {current_program}' + "\n" + f'Danach: {next_program}'
 
         return(response)

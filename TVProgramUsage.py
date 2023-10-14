@@ -4,9 +4,9 @@ import datetime
 def main():
     url = "https://www.hoerzu.de/text/tv-programm/sender.php"
     #time = datetime.datetime.now().time()
-    time = datetime.time(3, 52)
+    time = datetime.time(3,41)
     program = TVProgram()
-    program.setChannel("arte")
+    program.setChannel("zdf")
     program.setUrl(url)
     print(program.get_program(time))
 
