@@ -8,7 +8,7 @@ def main():
     program = TVProgramManager()
     program.setUrl(url)
     program.fetchAllProgramms()
-    print(program.getCurrentRunningProgram('das erste'))
+    print(program.getCurrentRunningProgram('rtl'))
 
 # Run the main function
 if __name__ == "__main__":

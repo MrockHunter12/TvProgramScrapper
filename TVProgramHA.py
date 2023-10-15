@@ -1,17 +1,22 @@
-from TvScapperClass import TVProgram
+from TVProgramManager import TVProgramManager
+from TVProgramManager import ProgramDay
 import datetime
 
-def get_program(channel_name):
-    url = "https://www.hoerzu.de/text/tv-programm/sender.php"
-    time = datetime.datetime.now().time()
-    response="Jetzt: ** no Info ** Danach: ** no Info **"
-    program = TVProgram()
+def get_program(program, channel_name):
     program.setChannel(channel_name)
-    program.setUrl(url)
-    response = program.get_program(time)
-    return response
+    return(program.getCurrentRunningProgram(channel_name))
 
 # Run the main function
 if __name__ == "__main__":
+    url = "https://www.hoerzu.de/text/tv-programm/sender.php"
+    time = datetime.datetime.now().time()
+    response="Jetzt: ** no Info ** Danach: ** no Info **"
+    program = TVProgramManager()
+    program.setUrl(url)
     import sys
-    print(get_program(sys.argv[1]))
+    if sys.argv[1] == 'fetch':
+        program.fetchAllProgramms()
+        print('fetch done successuflly')
+    else:
+        print(get_program(program, sys.argv[1]))
+    

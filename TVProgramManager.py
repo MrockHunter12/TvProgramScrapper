@@ -72,18 +72,21 @@ class TVProgramManager:
         dateTomorrow = (datetime.now() + timedelta(days=1)).strftime("%d-%m-%y")
         dateYesterday = (datetime.now() + timedelta(days=-1)).strftime("%d-%m-%y")
         if programDay == ProgramDay.TODAY:
+            dayRequest = 0
             current_date = dateToday
         elif programDay == ProgramDay.TOMORROW:
+            dayRequest = 1
             current_date = dateTomorrow
             dateTomorrow = (datetime.now() + timedelta(days=2)).strftime("%d-%m-%y")
         elif programDay == ProgramDay.YESTERDAY:
+            dayRequest = -1
             dateTomorrow = dateToday
             current_date = dateYesterday 
         program_info = []
         self.getIdFromChannelName()
         if self.channel_id != None:
             params = {
-                "newday": programDay,
+                "newday": dayRequest,
                 "tvchannelid":  self.channel_id,
                 "timeday": 1
             }
@@ -95,7 +98,7 @@ class TVProgramManager:
                     info = item.text.strip()
                     if info[0].isdigit():
                         time_string = info.split(',')[0].split(' ')[0].strip()
-                        program_string = info.split(',')[1].strip()
+                        program_string = info.split(',')[1].strip() + ", " + info.split(',')[2].strip()
                         time_obj = datetime.strptime(time_string, "%H:%M").time()
                         if time(0, 0) <= time_obj < time(5, 0):
                             dateTomorrowObj = datetime.strptime(dateTomorrow, "%d-%m-%y")
@@ -127,15 +130,16 @@ class TVProgramManager:
 
     def getCurrentRunningProgram(self, channelName):
         current_timestamp = datetime.now()
+        #current_timestamp = datetime(2023, 10, 16 ,4, 11)
         conn = sqlite3.connect('program_database.db')
         cursor = conn.cursor()
         cursor.execute('''
             SELECT program, timestamp
             FROM program
-            WHERE channel = ? AND timestamp <= ?
+            WHERE channel = ? AND time(timestamp) <= time(?) AND date(timestamp) = date(?)
             ORDER BY timestamp DESC
             LIMIT 1
-        ''', (channelName.lower(), current_timestamp))
+        ''', (channelName.lower(), current_timestamp, current_timestamp))
         result1 = cursor.fetchone()
         if result1 is not None:
             current_program, timestampCurrent = result1
@@ -166,9 +170,9 @@ class TVProgramManager:
         self.clearDatabase()
         for channel_name, channel_id in dic.items():
             self.setChannel(channel_name)
+            self.getProgramInfoList(ProgramDay.YESTERDAY)
             self.getProgramInfoList(ProgramDay.TODAY)
             self.getProgramInfoList(ProgramDay.TOMORROW)
-            self.getProgramInfoList(ProgramDay.YESTERDAY)
 
     def clearDatabase(self):
         os.remove('program_database.db')
